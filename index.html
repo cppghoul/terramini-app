@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terra OTC - Мини Приложение</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Базовые стили */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 16px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        /* Заголовок */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Навигация */
+        .navigation {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            background: #f8f9fa;
+            color: #333;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Секции */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Статус кошелька */
+        .wallet-status {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .wallet-connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .wallet-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-loading {
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Быстрые действия */
+        .quick-actions {
+            margin-bottom: 20px;
+        }
+
+        .quick-actions h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .action-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Формы */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        /* Кнопки */
+        .btn-primary {
+            width: 100%;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            background: #5a6fd8;
+        }
+
+        .btn-primary:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 8px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            background: #5a6268;
+        }
+
+        /* Сделки */
+        .deal-item, .referral-item, .nft-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .deal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .deal-amount {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .deal-status {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-created { background: #fff3cd; color: #856404; }
+        .status-buyer_joined { background: #d1ecf1; color: #0c5460; }
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+
+        .deal-description {
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .deal-link {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .deal-link code {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        .deal-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Рефералы */
+        .referral-stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .referral-link-card {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #b3d9ff;
+        }
+
+        .referral-link {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .referral-link code {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .referral-item {
+            border-left-color: #28a745;
+        }
+
+        /* NFT обмены */
+        .nft-item {
+            border-left-color: #ffc107;
+        }
+
+        .nft-status {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .nft-status.waiting { background: #fff3cd; color: #856404; }
+        .nft-status.processing { background: #d1ecf1; color: #0c5460; }
+        .nft-status.completed { background: #d4edda; color: #155724; }
+        .nft-status.cancelled { background: #f8d7da; color: #721c24; }
+
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            max-width: 90%;
+            text-align: center;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Заголовки секций */
+        .section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .deal-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1>💼 Terra OTC</h1>
+            <p>Безопасные P2P-сделки через гаранта</p>
+        </div>
+
+        <!-- Навигация -->
+        <div class="navigation">
+            <button class="nav-btn active" onclick="showSection('main')">🏠 Главная</button>
+            <button class="nav-btn" onclick="showSection('deals')">📄 Сделки</button>
+            <button class="nav-btn" onclick="showSection('referrals')">👥 Рефералы</button>
+            <button class="nav-btn" onclick="showSection('nft')">🔄 Обмены NFT</button>
+        </div>
+
+        <!-- Основной контент -->
+        <div id="mainSection" class="section active">
+            <!-- Статус кошелька -->
+            <div class="wallet-status" id="walletStatus">
+                <div class="status-loading">⏳ Загрузка статуса кошелька...</div>
+            </div>
+
+            <!-- Быстрые действия -->
+            <div class="quick-actions">
+                <h3>⚡ Быстрые действия</h3>
+                <button class="action-btn" onclick="showSection('deals')">
+                    📄 Создать сделку
+                </button>
+                <button class="action-btn" onclick="showSection('referrals')">
+                    👥 Реферальная программа
+                </button>
+                <button class="action-btn" onclick="showSection('nft')">
+                    🔄 Обмен NFT
+                </button>
+            </div>
+
+            <!-- Статистика -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="activeDealsCount">0</div>
+                    <div class="stat-label">Активных сделок</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalReferralsCount">0</div>
+                    <div class="stat-label">Рефералов</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="nftExchangesCount">0</div>
+                    <div class="stat-label">Обменов NFT</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция сделок -->
+        <div id="dealsSection" class="section">
+            <h2>📄 Управление сделками</h2>
+            
+            <!-- Форма создания сделки -->
+            <div class="deal-form">
+                <h3>🆕 Создать сделку</h3>
+                
+                <div class="form-group">
+                    <label>💎 Валюта:</label>
+                    <select id="currencySelect" class="form-select">
+                        <option value="TON">💎 TON</option>
+                        <option value="RUB">💵 RUB</option>
+                        <option value="UAH">🇺🇦 UAH</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>💰 Сумма:</label>
+                    <input type="number" id="amountInput" class="form-input" placeholder="Введите сумму" step="0.01" min="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>📝 Описание сделки:</label>
+                    <textarea id="descriptionInput" class="form-textarea" placeholder="Опишите что продаете/покупаете..."></textarea>
+                </div>
+
+                <button class="btn-primary" onclick="createDeal()">🚀 Создать сделку</button>
+            </div>
+
+            <!-- Активные сделки -->
+            <div class="deals-list">
+                <h3>📊 Активные сделки</h3>
+                <div id="dealsContainer">
+                    <div class="status-loading">⏳ Загрузка сделок...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция рефералов -->
+        <div id="referralsSection" class="section">
+            <h2>👥 Реферальная программа</h2>
+            
+            <!-- Статистика рефералов -->
+            <div class="referral-stats" id="referralStats">
+                <div class="status-loading">⏳ Загрузка статистики...</div>
+            </div>
+
+            <!-- Реферальная ссылка -->
+            <div class="referral-link-card">
+                <h3>🔗 Ваша реферальная ссылка</h3>
+                <div class="referral-link" id="referralLinkContainer">
+                    <code id="referralLink">Загрузка...</code>
+                </div>
+                <button class="btn-secondary" onclick="copyReferralLink()">📋 Копировать ссылку</button>
+                <button class="btn-secondary" onclick="shareReferralLink()">🔗 Поделиться</button>
+            </div>
+
+            <!-- Список рефералов -->
+            <div class="referrals-list">
+                <h3>👤 Ваши рефералы</h3>
+                <div id="referralsListContainer">
+                    <div class="status-loading">⏳ Загрузка рефералов...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция NFT обменов -->
+        <div id="nftSection" class="section">
+            <h2>🔄 Обмены NFT</h2>
+            
+            <!-- Создание обмена -->
+            <div class="nft-form">
+                <h3>🆕 Создать обмен NFT</h3>
+                
+                <div class="form-group">
+                    <label>📦 Описание вашего NFT:</label>
+                    <textarea id="nftDescription" class="form-textarea" placeholder="Опишите что предлагаете для обмена..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>👤 ID партнера:</label>
+                    <input type="number" id="partnerId" class="form-input" placeholder="Введите ID партнера">
+                </div>
+
+                <button class="btn-primary" onclick="createNftExchange()">🔄 Создать обмен</button>
+            </div>
+
+            <!-- Активные обмены -->
+            <div class="nft-exchanges">
+                <h3>📋 Активные обмены</h3>
+                <div id="nftExchangesContainer">
+                    <div class="status-loading">⏳ Загрузка обменов...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уведомления -->
+        <div id="notification" class="notification hidden"></div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        let userData = null;
+        let currentSection = 'main';
+
+        // Базовый URL API
+        const API_BASE_URL = 'https://terra-production-225a.up.railway.app/api';
+
+        // Инициализация приложения
+        tg.expand();
+        tg.enableClosingConfirmation();
+
+        // Основные элементы
+        const mainButton = tg.MainButton;
+        const backButton = tg.BackButton;
+
+        // Инициализация приложения
+        async function initApp() {
+            try {
+                console.log('🚀 Инициализация мини-приложения...');
+                
+                // Получаем данные пользователя
+                userData = tg.initDataUnsafe?.user;
+                
+                if (!userData) {
+                    console.error('❌ userData не загружен:', tg.initDataUnsafe);
+                    showNotification('Ошибка загрузки данных пользователя', 'error');
+                    
+                    // Показываем основной интерфейс даже без userData
+                    showSection('main');
+                    setupTelegramButtons();
+                    return;
+                }
+
+                console.log('👤 Пользователь загружен:', userData);
+                
+                // Загружаем начальные данные
+                await loadWalletStatus();
+                await loadMainStats();
+                
+                // Настраиваем кнопки Telegram
+                setupTelegramButtons();
+                
+                console.log('✅ Мини-приложение успешно инициализировано');
+                
+            } catch (error) {
+                console.error('❌ Ошибка инициализации:', error);
+                showNotification('Ошибка загрузки приложения', 'error');
+                
+                // Все равно показываем интерфейс
+                showSection('main');
+                setupTelegramButtons();
+            }
+        }
+
+        // Навигация по секциям
+        function showSection(sectionName) {
+            console.log('📱 Переход в секцию:', sectionName, 'userData:', userData);
+            
+            // Скрываем все секции
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Убираем активный класс со всех кнопок
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Показываем выбранную секцию
+            const targetSection = document.getElementById(sectionName + 'Section');
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+            
+            // Активируем соответствующую кнопку
+            const targetButton = document.querySelector(`.nav-btn[onclick="showSection('${sectionName}')"]`);
+            if (targetButton) {
+                targetButton.classList.add('active');
+            }
+            
+            currentSection = sectionName;
+            updateMainButton();
+            
+            // Обновляем данные для текущей секции (только если userData доступен)
+            if (userData && userData.id) {
+                switch(sectionName) {
+                    case 'deals':
+                        loadUserDeals();
+                        break;
+                    case 'referrals':
+                        loadReferralInfo();
+                        break;
+                    case 'nft':
+                        loadNftExchanges();
+                        break;
+                    case 'main':
+                        loadMainStats();
+                        break;
+                }
+            } else {
+                console.warn('⚠️ userData не доступен, пропускаем загрузку данных');
+            }
+        }
+
+        // Загрузка статуса кошелька
+        async function loadWalletStatus() {
+            try {
+                const walletStatus = document.getElementById('walletStatus');
+                if (!walletStatus) return;
+                
+                // Проверяем доступность userData
+                if (!userData || !userData.id) {
+                    walletStatus.innerHTML = `
+                        <div class="wallet-disconnected">
+                            ❌ Ошибка загрузки данных
+                            <div style="font-size: 12px; margin-top: 5px;">
+                                Перезагрузите приложение
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                walletStatus.innerHTML = '<div class="status-loading">⏳ Проверка кошелька...</div>';
+                
+                const walletData = await apiCall('/wallet/check', { user_id: userData.id });
+                
+                if (walletData && walletData.has_wallet) {
+                    const walletInfo = walletData.wallet_info;
+                    let walletDisplay = '';
+                    
+                    if (walletInfo && walletInfo.wallet_type === 'card') {
+                        const maskedCard = walletInfo.wallet ? `****${walletInfo.wallet.slice(-4)}` : 'не указан';
+                        walletDisplay = `💳 Банковская карта: ${maskedCard}`;
+                    } else if (walletInfo && walletInfo.wallet_type === 'crypto') {
+                        const shortWallet = walletInfo.wallet ? `${walletInfo.wallet.slice(0, 8)}...${walletInfo.wallet.slice(-6)}` : 'не указан';
+                        walletDisplay = `💰 TON-кошелек: ${shortWallet}`;
+                    } else {
+                        walletDisplay = '✅ Кошелек привязан';
+                    }
+                    
+                    walletStatus.innerHTML = `
+                        <div class="wallet-connected">
+                            ✅ Кошелек привязан
+                            <div style="font-size: 12px; margin-top: 5px;">
+                                ${walletDisplay}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    walletStatus.innerHTML = `
+                        <div class="wallet-disconnected">
+                            ❌ Кошелек не привязан
+                            <div style="font-size: 12px; margin-top: 5px;">
+                                Для создания сделок необходимо привязать кошелек в основном боте
+                            </div>
+                            <button class="btn-secondary" onclick="openBot()" style="margin-top: 10px;">
+                                📲 Открыть бота
+                            </button>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('❌ Ошибка загрузки статуса кошелька:', error);
+                const walletStatus = document.getElementById('walletStatus');
+                if (walletStatus) {
+                    walletStatus.innerHTML = `
+                        <div class="wallet-disconnected">
+                            ❌ Ошибка загрузки статуса кошелька
+                            <div style="font-size: 12px; margin-top: 5px;">
+                                ${error.message}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Загрузка основной статистики
+        async function loadMainStats() {
+            try {
+                if (!userData || !userData.id) {
+                    console.warn('userData не доступен для загрузки статистики');
+                    return;
+                }
+
+                // Загружаем сделки для подсчета
+                const deals = await apiCall('/deals/user', { user_id: userData.id });
+                const activeDeals = deals ? deals.filter(deal => 
+                    deal && ['created', 'buyer_joined', 'paid'].includes(deal.status)
+                ) : [];
+
+                // Загружаем реферальную статистику
+                const referralStats = await apiCall('/referrals/stats', { user_id: userData.id });
+                
+                // Загружаем NFT обмены
+                const nftExchanges = await apiCall('/nft/exchanges', { user_id: userData.id });
+                const activeExchanges = nftExchanges ? nftExchanges.filter(exchange => 
+                    exchange && ['waiting_partner', 'waiting_nft_descriptions', 'waiting_deposits', 'processing'].includes(exchange.status)
+                ) : [];
+                
+                // Обновляем статистику
+                updateCounter('activeDealsCount', activeDeals.length);
+                updateCounter('totalReferralsCount', referralStats ? (referralStats.total_referrals || 0) : 0);
+                updateCounter('nftExchangesCount', activeExchanges.length);
+                
+            } catch (error) {
+                console.error('❌ Ошибка загрузки статистики:', error);
+                updateCounter('activeDealsCount', 0);
+                updateCounter('totalReferralsCount', 0);
+                updateCounter('nftExchangesCount', 0);
+            }
+        }
+
+        // Анимация счетчиков
+        function updateCounter(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            element.textContent = value;
+        }
+
+        // Загрузка сделок пользователя
+        async function loadUserDeals() {
+            try {
+                const dealsContainer = document.getElementById('dealsContainer');
+                if (!dealsContainer) return;
+                
+                if (!userData || !userData.id) {
+                    dealsContainer.innerHTML = `
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            ❌ Данные пользователя не загружены
+                        </div>
+                    `;
+                    return;
+                }
+
+                dealsContainer.innerHTML = '<div class="status-loading">⏳ Загрузка сделок...</div>';
+
+                const deals = await apiCall('/deals/user', { user_id: userData.id });
+                
+                if (!deals || deals.length === 0) {
+                    dealsContainer.innerHTML = `
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            📝 У вас пока нет созданных сделок
+                        </div>
+                    `;
+                    return;
+                }
+
+                dealsContainer.innerHTML = deals.map(deal => `
+                    <div class="deal-item">
+                        <div class="deal-header">
+                            <span class="deal-amount">${deal.amount} ${deal.currency}</span>
+                            <span class="deal-status status-${deal.status}">
+                                ${getDealStatusText(deal.status)}
+                            </span>
+                        </div>
+                        <div class="deal-description">${deal.description}</div>
+                        <div class="deal-link">
+                            <strong>Ссылка для покупателя:</strong><br>
+                            <code>${deal.link}</code>
+                        </div>
+                        <div class="deal-actions">
+                            <button class="btn-secondary" onclick="copyToClipboard('${deal.link}')">
+                                📋 Копировать
+                            </button>
+                            <button class="btn-secondary" onclick="shareLink('${deal.link}', 'Присоединяйся к моей сделке в Terra OTC!')">
+                                🔗 Поделиться
+                            </button>
+                            ${deal.status === 'created' ? `
+                            <button class="btn-secondary" onclick="cancelDeal('${deal.id}')" style="background: #dc3545;">
+                                ❌ Отменить
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('❌ Ошибка загрузки сделок:', error);
+                const dealsContainer = document.getElementById('dealsContainer');
+                if (dealsContainer) {
+                    dealsContainer.innerHTML = `
+                        <div style="text-align: center; color: #dc3545; padding: 20px;">
+                            ❌ Ошибка загрузки сделок: ${error.message}
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Создание новой сделки
+        async function createDeal() {
+            try {
+                if (!userData || !userData.id) {
+                    showNotification('❌ Данные пользователя не загружены', 'error');
+                    return;
+                }
+
+                const currency = document.getElementById('currencySelect')?.value || 'TON';
+                const amountInput = document.getElementById('amountInput');
+                const descriptionInput = document.getElementById('descriptionInput');
+                
+                if (!amountInput || !descriptionInput) {
+                    showNotification('Ошибка: форма не найдена', 'error');
+                    return;
+                }
+
+                const amount = parseFloat(amountInput.value);
+                const description = descriptionInput.value.trim();
+
+                // Валидация
+                if (!amount || amount <= 0) {
+                    showNotification('Введите корректную сумму', 'error');
+                    return;
+                }
+
+                if (!description) {
+                    showNotification('Введите описание сделки', 'error');
+                    return;
+                }
+
+                // Показываем загрузку
+                const button = document.querySelector('#dealsSection .btn-primary');
+                if (button) {
+                    const originalText = button.textContent;
+                    button.textContent = '⏳ Создание...';
+                    button.disabled = true;
+
+                    // Создаем сделку
+                    const result = await apiCall('/deals/create', {
+                        user_id: userData.id,
+                        currency: currency,
+                        amount: amount,
+                        description: description
+                    }, 'POST');
+
+                    if (result && result.success) {
+                        showNotification('✅ Сделка успешно создана!', 'success');
+                        
+                        // Очищаем форму
+                        amountInput.value = '';
+                        descriptionInput.value = '';
+                        
+                        // Обновляем данные
+                        await loadUserDeals();
+                        await loadMainStats();
+                    } else {
+                        showNotification('❌ ' + (result?.error || 'Ошибка при создании сделки'), 'error');
+                    }
+
+                    // Восстанавливаем кнопку
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+
+            } catch (error) {
+                console.error('❌ Ошибка создания сделки:', error);
+                showNotification('❌ Ошибка при создании сделки: ' + error.message, 'error');
+                
+                // Восстанавливаем кнопку в случае ошибки
+                const button = document.querySelector('#dealsSection .btn-primary');
+                if (button) {
+                    button.textContent = '🚀 Создать сделку';
+                    button.disabled = false;
+                }
+            }
+        }
+
+        // Загрузка реферальной информации
+        async function loadReferralInfo() {
+            try {
+                if (!userData || !userData.id) {
+                    console.warn('userData не доступен для загрузки рефералов');
+                    return;
+                }
+
+                const stats = await apiCall('/referrals/stats', { user_id: userData.id });
+                const referrals = await apiCall('/referrals/list', { user_id: userData.id });
+                
+                // Обновляем статистику
+                const statsContainer = document.getElementById('referralStats');
+                if (statsContainer) {
+                    statsContainer.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: bold; color: #667eea;">${stats ? (stats.total_referrals || 0) : 0}</div>
+                                <div style="font-size: 12px; color: #666;">Всего рефералов</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: bold; color: #28a745;">${stats ? (stats.active_referrals || 0) : 0}</div>
+                                <div style="font-size: 12px; color: #666;">Активных</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Обновляем реферальную ссылку
+                const linkElement = document.getElementById('referralLink');
+                if (linkElement) {
+                    linkElement.textContent = stats ? (stats.referral_link || 'Недоступно') : 'Недоступно';
+                }
+                
+                // Обновляем список рефералов
+                const container = document.getElementById('referralsListContainer');
+                if (container) {
+                    if (!referrals || referrals.length === 0) {
+                        container.innerHTML = `
+                            <div style="text-align: center; color: #666; padding: 20px;">
+                                👥 У вас пока нет рефералов
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = referrals.map(ref => `
+                            <div class="referral-item">
+                                <div style="font-weight: bold; margin-bottom: 5px;">👤 ID: ${ref.user_id}</div>
+                                <div style="font-size: 12px; color: #666;">
+                                    Присоединился: ${ref.joined || 'Неизвестно'}<br>
+                                    Статус: ${ref.transferred_gifts && ref.transferred_gifts.length > 0 ? '✅ Активен' : '⏳ Ожидает'}
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Ошибка загрузки реферальной информации:', error);
+            }
+        }
+
+        // Загрузка NFT обменов
+        async function loadNftExchanges() {
+            try {
+                if (!userData || !userData.id) {
+                    console.warn('userData не доступен для загрузки NFT обменов');
+                    return;
+                }
+
+                const exchanges = await apiCall('/nft/exchanges', { user_id: userData.id });
+                const container = document.getElementById('nftExchangesContainer');
+                
+                if (!container) return;
+                
+                if (!exchanges || exchanges.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            🔄 У вас пока нет обменов NFT
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = exchanges.map(exchange => `
+                    <div class="nft-item">
+                        <div class="nft-status ${exchange.status}">
+                            ${getNftStatusText(exchange.status)}
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>ID обмена:</strong> ${exchange.exchange_id}<br>
+                            <strong>Партнер:</strong> #${exchange.partner_id}<br>
+                            <strong>Ваше предложение:</strong> ${exchange.initiator_nft}<br>
+                            ${exchange.partner_nft ? `<strong>Предложение партнера:</strong> ${exchange.partner_nft}<br>` : ''}
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            Создан: ${exchange.created_at}
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('❌ Ошибка загрузки NFT обменов:', error);
+                const container = document.getElementById('nftExchangesContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: #dc3545; padding: 20px;">
+                            ❌ Ошибка загрузки обменов
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Создание NFT обмена
+        async function createNftExchange() {
+            try {
+                if (!userData || !userData.id) {
+                    showNotification('❌ Данные пользователя не загружены', 'error');
+                    return;
+                }
+
+                const descriptionInput = document.getElementById('nftDescription');
+                const partnerInput = document.getElementById('partnerId');
+                
+                if (!descriptionInput || !partnerInput) {
+                    showNotification('Ошибка: форма не найдена', 'error');
+                    return;
+                }
+
+                const description = descriptionInput.value.trim();
+                const partnerId = partnerInput.value.trim();
+
+                if (!description) {
+                    showNotification('Введите описание NFT', 'error');
+                    return;
+                }
+
+                if (!partnerId) {
+                    showNotification('Введите ID партнера', 'error');
+                    return;
+                }
+
+                const result = await apiCall('/nft/exchanges/create', {
+                    user_id: userData.id,
+                    nft_description: description,
+                    partner_id: parseInt(partnerId)
+                }, 'POST');
+
+                if (result && result.success) {
+                    showNotification('✅ Приглашение на обмен отправлено!', 'success');
+                    descriptionInput.value = '';
+                    partnerInput.value = '';
+                    await loadNftExchanges();
+                    await loadMainStats();
+                } else {
+                    showNotification('❌ ' + (result?.error || 'Ошибка при создании обмена'), 'error');
+                }
+
+            } catch (error) {
+                console.error('❌ Ошибка создания NFT обмена:', error);
+                showNotification('❌ Ошибка при создании обмена: ' + error.message, 'error');
+            }
+        }
+
+        // Вспомогательные функции
+        function getDealStatusText(status) {
+            const statusMap = {
+                'created': 'Ожидает покупателя',
+                'buyer_joined': 'Покупатель присоединился', 
+                'paid': 'Оплачено',
+                'completed': 'Завершена',
+                'cancelled': 'Отменена'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getNftStatusText(status) {
+            const statusMap = {
+                'waiting_partner': '⏳ Ожидает партнера',
+                'waiting_nft_descriptions': '📝 Ожидает описания NFT',
+                'waiting_deposits': '💰 Ожидает отправки NFT',
+                'processing': '⚡ В процессе обмена',
+                'completed': '✅ Завершен',
+                'cancelled': '❌ Отменен'
+            };
+            return statusMap[status] || status;
+        }
+
+        // Отмена сделки
+        async function cancelDeal(dealId) {
+            if (!confirm('Вы уверены, что хотите отменить сделку?')) return;
+            
+            try {
+                if (!userData || !userData.id) {
+                    showNotification('❌ Данные пользователя не загружены', 'error');
+                    return;
+                }
+
+                const result = await apiCall('/deals/cancel', {
+                    user_id: userData.id,
+                    deal_id: dealId
+                }, 'POST');
+                
+                if (result && result.success) {
+                    showNotification('✅ Сделка отменена', 'success');
+                    await loadUserDeals();
+                    await loadMainStats();
+                } else {
+                    showNotification('❌ ' + (result?.error || 'Ошибка при отмене сделки'), 'error');
+                }
+            } catch (error) {
+                console.error('❌ Ошибка отмены сделки:', error);
+                showNotification('❌ Ошибка при отмене сделки: ' + error.message, 'error');
+            }
+        }
+
+        // Реферальные функции
+        function copyReferralLink() {
+            const linkElement = document.getElementById('referralLink');
+            if (linkElement) {
+                copyToClipboard(linkElement.textContent);
+            }
+        }
+
+        function shareReferralLink() {
+            const linkElement = document.getElementById('referralLink');
+            if (linkElement) {
+                shareLink(linkElement.textContent, 'Присоединяйся к Terra OTC по моей ссылке!');
+            }
+        }
+
+        // Утилиты
+        function copyToClipboard(text) {
+            if (!text || text === 'Недоступно') {
+                showNotification('❌ Нечего копировать', 'error');
+                return;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('✅ Скопировано в буфер обмена', 'success');
+            }).catch(() => {
+                // Fallback для старых браузеров
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showNotification('✅ Скопировано в буфер обмена', 'success');
+            });
+        }
+
+        function shareLink(link, text) {
+            if (!link || link === 'Недоступно') {
+                showNotification('❌ Нечего делиться', 'error');
+                return;
+            }
+            
+            if (tg.isVersionAtLeast('6.1')) {
+                tg.shareUrl(link, text);
+            } else {
+                copyToClipboard(link);
+                showNotification('Ссылка скопирована. Поделитесь ей вручную.', 'warning');
+            }
+        }
+
+        function openBot() {
+            tg.openTelegramLink('https://t.me/Terra_Otc_bot');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            if (!notification) return;
+            
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Универсальная функция для API вызовов с обработкой ошибок
+        async function apiCall(endpoint, params = {}, method = 'GET') {
+            try {
+                let url = `${API_BASE_URL}${endpoint}`;
+                let options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                    credentials: 'omit'
+                };
+
+                if (method === 'GET') {
+                    const queryParams = new URLSearchParams(params).toString();
+                    if (queryParams) {
+                        url += `?${queryParams}`;
+                    }
+                } else {
+                    options.body = JSON.stringify(params);
+                }
+
+                console.log(`🔍 API Call: ${url}`, params);
+                
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log(`✅ API Response:`, data);
+                return data;
+                
+            } catch (error) {
+                console.error(`❌ API Error (${endpoint}):`, error);
+                throw new Error(`Не удалось подключиться к серверу: ${error.message}`);
+            }
+        }
+
+        // Настройка кнопок Telegram
+        function setupTelegramButtons() {
+            updateMainButton();
+            
+            // Кнопка назад
+            backButton.show();
+            backButton.onClick(() => {
+                if (currentSection !== 'main') {
+                    showSection('main');
+                } else {
+                    tg.close();
+                }
+            });
+        }
+
+        function updateMainButton() {
+            switch(currentSection) {
+                case 'deals':
+                    mainButton.setText("📄 Создать сделку");
+                    mainButton.onClick(createDeal);
+                    break;
+                case 'nft':
+                    mainButton.setText("🔄 Создать обмен");
+                    mainButton.onClick(createNftExchange);
+                    break;
+                default:
+                    mainButton.setText("🏠 Главная");
+                    mainButton.onClick(() => showSection('main'));
+            }
+            mainButton.show();
+        }
+
+        // Запуск приложения когда Telegram WebApp готов
+        tg.ready();
+
+        // Обработчики событий Telegram
+        tg.onEvent('viewportChanged', (event) => {
+            console.log('Viewport changed:', event);
+        });
+
+        tg.onEvent('themeChanged', () => {
+            console.log('Theme changed');
+        });
+
+        // Инициализация приложения
+        initApp();
+    </script>
+</body>
+</html>
